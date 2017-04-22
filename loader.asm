@@ -42,7 +42,6 @@ l:  lda cfg,x
 
     ; Initialise VIA2 Timer 1 (cassette tape read).
     lda #<timer
-    sta current_low
     sta $9124
     lda #>timer
     sta $9125
@@ -73,34 +72,7 @@ irq:
     sta $900f       ; Something for the eye.
 mod_handler:
     jsr $0000
-jmp +done
 
-    ; Make sum of samples.
-    txa
-    clc
-    adc average
-    sta average
-    bcc +n
-    inc @(++ average)
-
-n:  dec tleft
-    bne +done
-
-    ; Correct time if average pulse length doesn't match our desired value.
-    lda @(++ average)   ; average / 256
-    cmp #$7f
-    beq +done           ; It's already what we want.
-    bcc +n
-    dec current_low
-    bne +m
-n:  inc current_low
-m:  lda current_low
-    sta $9124
-    lda #0
-    sta average
-    sta @(++ average)
-
-done:
     lda #$7f
     sta $912d
     jmp $eb18
