@@ -1,25 +1,41 @@
 (= *model* :vic-20+xk)
-(defvar *pulse-interval* #x20)
-(defvar *pulse-short* #x30)
-(defvar *pulse-long* (+ *pulse-short* *pulse-interval*))
-(defvar *tape-pulse* nil)
+(var *pulse-interval* #x20)
+(var *pulse-short* #x30)
+(var *pulse-long* (+ *pulse-short* *pulse-interval*))
+(var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
 
-(defun c2nbit (o x)
+(fn c2nbit (o x)
   (write-byte (+ *pulse-short* (* (/ *pulse-interval* 4) (- 3 x))) o))
 
-(defun c2ntap (o i)
-  (write-dword #x8000000 o)
+(fn c2n-leader (o)
   (adotimes 64
-    (c2nbit o 0))
-  (c2nbit o 3)
+    (write-byte *pulse-short* o))
+  (write-byte *pulse-long* o)
+  (write-byte *pulse-short* o))
+
+(fn c2n-trailer (o)
+  (adotimes 16
+    (write-byte *pulse-short* o)))
+
+(fn c2n-refs (o)
+  (adotimes 32
+    (adotimes 4
+      (c2nbit o !))))
+
+(fn c2ntap (o i)
+  (write-dword #x8000000 o)
+  (c2n-leader o)
+  (c2n-refs o)
+  (c2n-trailer o)
+  (write-dword #x2000000 o)
+  (c2n-leader o)
   (awhile (read-byte i)
          nil
     (c2nbit o (bit-and (>> ! 6) 3))
     (c2nbit o (bit-and (>> ! 4) 3))
     (c2nbit o (bit-and (>> ! 2) 3))
     (c2nbit o (bit-and ! 3)))
-  (adotimes 16
-    (write-byte *pulse-short* o)))
+  (c2n-trailer o))
 
 (apply #'assemble-files "c2nwarp.prg"
        '("zeropage.asm"
