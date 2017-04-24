@@ -1,5 +1,5 @@
 (= *model* :vic-20+xk)
-(var *pulse-interval* #x50)
+(var *pulse-interval* #x60)
 (var *pulse-short* #x20)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
@@ -14,7 +14,7 @@
   (write-byte *pulse-short* o))
 
 (fn c2n-trailer (o)
-  (adotimes 16
+  (adotimes 32
     (write-byte *pulse-short* o)))
 
 (fn c2n-refs (o)
@@ -48,7 +48,8 @@
 (format t "Long pulse: ~A~%" *pulse-long*)
 (format t "Pulse interval: ~A~%" *pulse-interval*)
 (format t "Pulse subinterval: ~A~%" (/ *pulse-interval* 4))
-(format t "C2NWARP rate: ~A~%" (* 4 (/ (cpu-cycles :pal) *tape-pulse*)))
+(format t "Pulse rate: ~A~%" (integer (/ (cpu-cycles :pal) *tape-pulse*)))
+(format t "C2NWARP rate: ~A~%" (integer (* 2 (/ (cpu-cycles :pal) *tape-pulse*))))
 
 (with-output-file o "sssa.tap"
   (write-tap o
