@@ -7,7 +7,7 @@ tape_map = $5800
 tape_map_length = $800
 tape_map_end = @(+ tape_map tape_map_length)
 
-timer = @(+ 32 (- (* 8 *pulse-long*) restart_delay))
+timer = @(+ 64 (- (* 8 *pulse-long*) restart_delay))
 
 main:
     sei
@@ -257,7 +257,7 @@ n:  dec tape_counter        ; All bytes loaded?
     jmp (tape_callback)
 
 pulse_to_map:
-    cmp #6
+    cmp #4
     bcs +n
     inx
 n:
