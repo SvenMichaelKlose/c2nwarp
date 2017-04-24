@@ -1,6 +1,6 @@
 (= *model* :vic-20+xk)
-(var *pulse-interval* #x60)
-(var *pulse-short* #x20)
+(var *pulse-interval* #x50)
+(var *pulse-short* #x18)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
 
@@ -59,6 +59,6 @@
        (with-input-file i "sssa.exo.prg"
          (with-string-stream s (c2ntap s i))))))
 
-(with-input-file i "sssa.tap" (with-output-file o "sssa.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
+;(with-input-file i "sssa.tap" (with-output-file o "sssa.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
 
 (quit)
