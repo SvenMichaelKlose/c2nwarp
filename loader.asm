@@ -1,13 +1,9 @@
 tape_leader_length = 32
-irq_break_delay = @(half 3)
-irq_delay = 7
-irq_handler_delay = 29
-restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
 tape_map = $5800
-tape_map_length = $800
+tape_map_length = $400
 tape_map_end = @(+ tape_map tape_map_length)
 
-timer = @(+ 64 (- (* 8 *pulse-long*) restart_delay))
+timer = @(* 8 *pulse-long*)
 
 main:
     sei
@@ -83,7 +79,6 @@ tape_get_bit:
     ldx $9121
     asl     ; Move underflow bit into carry.
     asl
-    sta $900f
     rts
 
 tape_leader1:

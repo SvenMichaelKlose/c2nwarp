@@ -1,6 +1,6 @@
 (= *model* :vic-20+xk)
 (var *pulse-interval* #x50)
-(var *pulse-short* #x18)
+(var *pulse-short* #x19)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
 
@@ -26,7 +26,7 @@
   (write-dword #x8000000 o)
   (c2n-leader o)
   (c2n-refs o)
-  (adotimes 512
+  (adotimes 384
     (write-byte *pulse-short* o)
     (write-byte *pulse-long* o))
   (c2n-leader o)
@@ -55,10 +55,10 @@
   (write-tap o
     (+ (bin2cbmtap (cddr (string-list (fetch-file "c2nwarp.prg")))
                    "C2NWARP LOADER"
-                   :start #x1001)
+                   :start #x1201)
        (with-input-file i "sssa.exo.prg"
          (with-string-stream s (c2ntap s i))))))
 
-;(with-input-file i "sssa.tap" (with-output-file o "sssa.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
+(with-input-file i "sssa.tap" (with-output-file o "sssa.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
 
 (quit)
