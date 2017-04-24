@@ -1,6 +1,5 @@
 screen      = $1e00
 colors      = $9600
-tape_map    = $5c00
 
     org 0
 

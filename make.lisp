@@ -1,6 +1,6 @@
 (= *model* :vic-20+xk)
-(var *pulse-interval* #x20)
-(var *pulse-short* #x30)
+(var *pulse-interval* #x50)
+(var *pulse-short* #x20)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
 
@@ -18,7 +18,7 @@
     (write-byte *pulse-short* o)))
 
 (fn c2n-refs (o)
-  (adotimes 32
+  (adotimes 256
     (adotimes 4
       (c2nbit o !))))
 
@@ -26,8 +26,9 @@
   (write-dword #x8000000 o)
   (c2n-leader o)
   (c2n-refs o)
-  (c2n-trailer o)
-  (write-dword #x2000000 o)
+  (adotimes 512
+    (write-byte *pulse-short* o)
+    (write-byte *pulse-long* o))
   (c2n-leader o)
   (awhile (read-byte i)
          nil
@@ -47,6 +48,7 @@
 (format t "Long pulse: ~A~%" *pulse-long*)
 (format t "Pulse interval: ~A~%" *pulse-interval*)
 (format t "Pulse subinterval: ~A~%" (/ *pulse-interval* 4))
+(format t "C2NWARP rate: ~A~%" (* 4 (/ (cpu-cycles :pal) *tape-pulse*)))
 
 (with-output-file o "sssa.tap"
   (write-tap o
@@ -56,7 +58,6 @@
        (with-input-file i "sssa.exo.prg"
          (with-string-stream s (c2ntap s i))))))
 
-(with-input-file i "sssa.tap"
-  (with-output-file o "sssa.wav"
-    (tap2wav i o 44100 (cpu-cycles :pal))))
+(with-input-file i "sssa.tap" (with-output-file o "sssa.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
+
 (quit)

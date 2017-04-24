@@ -3,10 +3,11 @@ irq_break_delay = @(half 3)
 irq_delay = 7
 irq_handler_delay = 29
 restart_delay = @(+ irq_break_delay irq_delay irq_handler_delay)
-tape_map_length = 1024
+tape_map = $5800
+tape_map_length = $800
 tape_map_end = @(+ tape_map tape_map_length)
 
-timer = @(- (* 8 *pulse-long*) restart_delay)
+timer = @(+ 32 (- (* 8 *pulse-long*) restart_delay))
 
 main:
     sei
@@ -15,6 +16,7 @@ main:
     sta $912e
     sta $912d
 
+    ; Configure loader.
     ldx #5
 l:  lda cfg,x
     sta tape_ptr,x
@@ -24,6 +26,7 @@ l:  lda cfg,x
     lda #tape_leader_length
     sta tape_leader_countdown
 
+    ; Init pulse length map.
     lda #<tape_map
     sta s
     sta d
@@ -101,7 +104,7 @@ tape_leader1end:
     sta $9125
     lda #0
     sta tape_bit_counter
-    lda #32
+    lda #0
     sta tape_leader_countdown
     ldx #<tape_sync
     ldy #>tape_sync
@@ -109,30 +112,19 @@ tape_leader1end:
 
 tape_sync:
     lda $9124       ; Read the timer's low byte which is your sample.
-    ldy #>timer
     ldx $9125
+    ldy #>timer
     sty $9125       ; Write high byte to restart the timer.
-
-    ; Plot nibble into map of pulse lengths.
-    sta s
-    stx @(++ s)
-    lda s
-    clc
-    adc #<tape_map
-    sta s
-    lda @(++ s)
-    adc #>tape_map
-    sta @(++ s)
-    ldy #0
+    jsr pulse_to_map
     lda tape_bit_counter
     sta (s),y
     clc
     adc #1
     and #3
-    sta tape_bit_counter
     sta $900f
-
-    dec tape_leader_countdown
+    sta tape_bit_counter
+    bne intret
+n:  dec tape_leader_countdown
     beq fill_map
     bne intret
 
@@ -145,6 +137,7 @@ intret:
     jmp $eb18
 
 fill_map:
+    jsr show_map
     lda #<tape_map
     sta s
     lda #>tape_map
@@ -183,7 +176,10 @@ n:  txa
     bne -n
     beq -l
 
-r:  lda #tape_leader_length
+r:
+    jsr show_map
+
+    lda #tape_leader_length
     sta tape_leader_countdown
     ldx #@(low *tape-pulse*)
     sta $9124
@@ -220,27 +216,16 @@ tape_leader2end:
 
 tape_loader_data:
     lda $9124       ; Read the timer's low byte which is your sample.
-    ldy #>timer
     ldx $9125
+    ldy #>timer
     sty $9125       ; Write high byte to restart the timer.
-
-    sta s
-    stx @(++ s)
-    lda s
-    clc
-    adc #<tape_map
-    sta s
-    lda @(++ s)
-    adc #>tape_map
-    sta @(++ s)
-    ldy #0
+    jsr pulse_to_map
     lda (s),y
- 
     asl tape_current_byte
     asl tape_current_byte
     ora tape_current_byte
     sta tape_current_byte
-    sta $900f
+;    sta $900f
     dec tape_bit_counter
     beq byte_complete
 r:  jmp intret
@@ -270,6 +255,44 @@ n:  dec tape_counter        ; All bytes loaded?
     sta $315
 
     jmp (tape_callback)
+
+pulse_to_map:
+    cmp #6
+    bcs +n
+    inx
+n:
+    sta s               ; Make timer value index into map.
+    stx @(++ s)
+    lda @(++ s)
+    cmp #$02
+    bcs +j
+    and #1
+    ora #$10
+    sta @(++ s)
+    lda (s),y
+    sec
+    sbc #1
+    sta (s),y
+    lda @(++ s)
+j:  and #7
+    ora #>tape_map
+    sta @(++ s)
+
+    ldy #0
+    rts
+
+show_map:
+    ldx #0
+l:  lda tape_map,x
+    sta $1000,x
+    lda @(+ 256 tape_map),x
+    sta $1100,x
+    lda #1
+    sta $9400,x
+    sta $9500,x
+    inx
+    bne -l
+    rts
 
 start_game:
     ldx #@(- copy_forwards_end copy_forwards 1)
