@@ -111,10 +111,6 @@ tape_leader1end:
     jmp intretn
 
 tape_sync:
-    lda $9124       ; Read the timer's low byte which is your sample.
-    ldx $9125
-    ldy #>timer
-    sty $9125       ; Write high byte to restart the timer.
     jsr pulse_to_map
     lda tape_bit_counter
     sta (s),y
@@ -215,10 +211,6 @@ tape_leader2end:
     jmp intretn
 
 tape_loader_data:
-    lda $9124       ; Read the timer's low byte which is your sample.
-    ldx $9125
-    ldy #>timer
-    sty $9125       ; Write high byte to restart the timer.
     jsr pulse_to_map
     lda (s),y
     asl tape_current_byte
@@ -257,6 +249,10 @@ n:  dec tape_counter        ; All bytes loaded?
     jmp (tape_callback)
 
 pulse_to_map:
+    lda $9124       ; Read the timer's low byte which is your sample.
+    ldx $9125
+    ldy #>timer
+    sty $9125       ; Write high byte to restart the timer.
     cmp #4
     bcs +n
     inx
