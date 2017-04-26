@@ -12,8 +12,8 @@ main:
     sta $912e
     sta $912d
 
-    lda #0
-    sta $9002
+;    lda #0
+;    sta $9002
 
     ; Configure loader.
     ldx #5
@@ -111,7 +111,10 @@ tape_leader1end:
 tape_sync:
     jsr pulse_to_map
     lda tape_bit_counter
+    eor tape_leader_countdown
+    and #3
     sta (s),y
+    lda tape_bit_counter
     clc
     adc #1
     and #3
@@ -131,7 +134,7 @@ intret:
     jmp $eb18
 
 fill_map:
-;    jsr show_map
+    jsr show_map
     lda #<tape_map
     sta s
     lda #>tape_map
@@ -171,7 +174,7 @@ n:  txa
     beq -l
 
 r:
-;    jsr show_map
+    jsr show_map
 
     lda #tape_leader_length
     sta tape_leader_countdown
@@ -215,7 +218,7 @@ tape_loader_data:
     asl tape_current_byte
     ora tape_current_byte
     sta tape_current_byte
-    sta $900f
+;    sta $900f
     dec tape_bit_counter
     beq byte_complete
 r:  jmp intret
@@ -224,7 +227,6 @@ byte_complete:
     lda #4                  ; Reset bit count.
     sta tape_bit_counter
     lda tape_current_byte   ; Save byte to its destination.
-    ldy #0
     sta (tape_ptr),y
     inc tape_ptr            ; Advance destination address.
     bne +n
@@ -249,8 +251,11 @@ n:  dec tape_counter        ; All bytes loaded?
 pulse_to_map:
     lda $9124       ; Read the timer's low byte which is your sample.
     ldx $9125
+    ldy #<timer
+    sty $9124
     ldy #>timer
     sty $9125       ; Write high byte to restart the timer.
+    ldy #0
     cmp #4
     bcs +n
     inx
@@ -258,35 +263,34 @@ n:
     sta s               ; Make timer value index into map.
     stx @(++ s)
     lda @(++ s)
-;    cmp #$02
-;    bcs +j
-;    and #1
-;    ora #$10
-;    sta @(++ s)
-;    lda (s),y
-;    sec
-;    sbc #1
-;    sta (s),y
-;    lda @(++ s)
+    cmp #$02
+    bcs +j
+    and #1
+    ora #$10
+    sta @(++ s)
+    lda (s),y
+    sec
+    sbc #1
+    sta (s),y
+    lda @(++ s)
 j:  and #7
     ora #>tape_map
     sta @(++ s)
 
-    ldy #0
     rts
 
-;show_map:
-;    ldx #0
-;l:  lda tape_map,x
-;    sta $1000,x
-;    lda @(+ 256 tape_map),x
-;    sta $1100,x
-;    lda #1
-;    sta $9400,x
-;    sta $9500,x
-;    inx
-;    bne -l
-;    rts
+show_map:
+    ldx #0
+l:  lda tape_map,x
+    sta $1000,x
+    lda @(+ 256 tape_map),x
+    sta $1100,x
+    lda #1
+    sta $9400,x
+    sta $9500,x
+    inx
+    bne -l
+    rts
 
 start_game:
     ldx #@(- copy_forwards_end copy_forwards 1)
