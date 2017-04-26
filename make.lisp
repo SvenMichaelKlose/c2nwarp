@@ -1,5 +1,5 @@
 (= *model* :vic-20+xk)
-(var *pulse-interval* #x4c)
+(var *pulse-interval* #x50)
 (var *pulse-short* #x1c)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
