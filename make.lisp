@@ -1,6 +1,6 @@
 (= *model* :vic-20+xk)
-(var *pulse-interval* #x50)
-(var *pulse-short* #x19)
+(var *pulse-interval* #x4c)
+(var *pulse-short* #x1c)
 (var *pulse-long* (+ *pulse-short* *pulse-interval*))
 (var *tape-pulse* (* 8 (+ *pulse-short* (half *pulse-interval*))))
 
@@ -18,9 +18,9 @@
     (write-byte *pulse-short* o)))
 
 (fn c2n-refs (o)
-  (adotimes 256
+  (dotimes (i 256)
     (adotimes 4
-      (c2nbit o !))))
+      (c2nbit o (bit-xor ! (bit-and (- 256 i) 3))))))
 
 (fn c2ntap (o i)
   (write-dword #x8000000 o)
