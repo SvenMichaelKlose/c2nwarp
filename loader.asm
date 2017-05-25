@@ -1,6 +1,6 @@
 tape_leader_length = 32
 tape_map = $5800
-tape_map_length = $400
+tape_map_length = $800
 tape_map_end = @(+ tape_map tape_map_length)
 
 timer = @(* 8 *pulse-long*)
@@ -12,8 +12,10 @@ main:
     sta $912e
     sta $912d
 
-;    lda #0
-;    sta $9002
+if @(not *show-map?*)
+    lda #0
+    sta $9002
+end
 
     ; Configure loader.
     ldx #5
@@ -134,7 +136,9 @@ intret:
     jmp $eb18
 
 fill_map:
+if @*show-map?*
     jsr show_map
+end
     lda #<tape_map
     sta s
     lda #>tape_map
@@ -174,7 +178,9 @@ n:  txa
     beq -l
 
 r:
+if @*show-map?*
     jsr show_map
+end
 
     lda #tape_leader_length
     sta tape_leader_countdown
@@ -218,7 +224,9 @@ tape_loader_data:
     asl tape_current_byte
     ora tape_current_byte
     sta tape_current_byte
-;    sta $900f
+if @(not *show-map?*)
+    sta $900f
+end
     dec tape_bit_counter
     beq byte_complete
 r:  jmp intret
@@ -246,6 +254,10 @@ n:  dec tape_counter        ; All bytes loaded?
     lda @(++ tape_old_irq)
     sta $315
 
+    ; Stop tape motor.
+    lda $911c
+    ora #3
+    sta $911c
     jmp (tape_callback)
 
 pulse_to_map:
@@ -263,6 +275,7 @@ n:
     sta s               ; Make timer value index into map.
     stx @(++ s)
     lda @(++ s)
+if @*show-map?*
     cmp #$02
     bcs +j
     and #1
@@ -273,6 +286,7 @@ n:
     sbc #1
     sta (s),y
     lda @(++ s)
+end
 j:  and #7
     ora #>tape_map
     sta @(++ s)
@@ -375,7 +389,7 @@ m:  inc @(++ d)
     bcc -q
 copy_forwards_end:
 
-binary_size = @(length (fetch-file "sssa.exo.prg"))
+binary_size = @(length (fetch-file *path-main*))
 cfg:
     <target >target
     <binary_size @(++ (high binary_size))
