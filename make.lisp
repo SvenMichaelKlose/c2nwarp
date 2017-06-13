@@ -59,7 +59,8 @@
     (+ (bin2cbmtap (cddr (string-list (fetch-file "c2nwarp.prg")))
                    *title*
                    :start #x1201
-                   :short-data? t)
+                   :short-data? t
+                   :no-gaps? t)
        (with-input-file i *path-main*
          (with-string-stream s (c2ntap s i))))))
 ;       (bin2cbmtap (cddr (string-list (fetch-file *path-main*)))
