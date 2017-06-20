@@ -54,6 +54,10 @@ l:  lda #$ff
     sta $911c
 
     ; Set IRQ vector.
+    lda $314
+    sta tape_old_irq
+    lda $315
+    sta @(++ tape_old_irq)
     lda #<tape_leader1
     sta $314
     lda #>tape_leader1
@@ -79,6 +83,7 @@ tape_get_bit:
     ldx #@(high *tape-pulse*) ; Restart timer.
     stx $9125
     ldx $9121
+    inc $900f
     asl     ; Move underflow bit into carry.
     asl
     rts
@@ -253,11 +258,13 @@ n:  dec tape_counter        ; All bytes loaded?
     sta $314
     lda @(++ tape_old_irq)
     sta $315
+;    jsr $e5c3               ; Re-init VIC.
 
     ; Stop tape motor.
     lda $911c
     ora #3
     sta $911c
+
     jmp (tape_callback)
 
 pulse_to_map:
@@ -353,11 +360,6 @@ n:  lda c
     rts
 
 copy_forwards:
-    ldy #@(low binary_size)
-    lda #0
-    sta c
-    lda #@(++ (high binary_size))
-    sta @(++ c)
     lda #<target
     sta s
     lda #>target
@@ -366,27 +368,20 @@ copy_forwards:
     sta d
     lda #$11
     sta @(++ d)
-
-    ldy #0
+    ldx #@(low binary_size)
+    lda #@(++ (high binary_size))
+    sta @(++ c)
 l:  lda (s),y
     sta (d),y
-    inc s
-    beq +k
-n:  inc d
-    beq +m
-q:  dex
+    iny
+    bne +n
+    inc @(++ s)
+    inc @(++ d)
+n:  dex
     bne -l
     dec @(++ c)
     bne -l
     jmp $120d
-
-k:  inc @(++ s)
-    clc
-    bcc -n
-
-m:  inc @(++ d)
-    clc
-    bcc -q
 copy_forwards_end:
 
 binary_size = @(length (fetch-file *path-main*))
