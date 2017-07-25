@@ -41,37 +41,26 @@
     (c2nbit o (bit-and ! 3)))
   (c2n-trailer o))
 
-(apply #'assemble-files "c2nwarp.prg"
-       '("zeropage.asm"
-         "bender/vic-20/basic-loader.asm"
-         "loader.asm"))
-(make-vice-commands "loader.vice.txt" "break .stop")
-
-(format t "Short pulse: ~A~%" *pulse-short*)
-(format t "Long pulse: ~A~%" *pulse-long*)
-(format t "Pulse interval: ~A~%" *pulse-interval*)
-(format t "Pulse subinterval: ~A~%" (/ *pulse-interval* 4))
-(format t "Pulse rate: ~A~%" (integer (/ (cpu-cycles :pal) *tape-pulse*)))
-(format t "C2NWARP rate: ~A~%" (integer (* 2 (/ (cpu-cycles :pal) *tape-pulse*))))
-
-(with-output-file o "arukanoido/arukanoido.tap"
-  (write-tap o
-    (+ (bin2cbmtap (cddr (string-list (fetch-file "c2nwarp.prg")))
-                   *title*
-                   :start #x1201
-                   :short-data? t
-                   :no-gaps? t)
-       (with-input-file i *path-main*
-         (with-string-stream s (c2ntap s i))))))
-;       (bin2cbmtap (cddr (string-list (fetch-file *path-main*)))
-;                   *title*
-;                   :start #x1201
-;                   :short-leader? t
-;                   :short-data? t))))
-
-(with-input-file i "arukanoido/arukanoido.tap" (with-output-file o "arukanoido/arukanoido.pal.wav" (tap2wav i o 44100 (cpu-cycles :pal))))
-(with-input-file i "arukanoido/arukanoido.tap" (with-output-file o "arukanoido/arukanoido.ntsc.wav" (tap2wav i o 44100 (cpu-cycles :ntsc))))
-
-(sb-ext:run-program "/usr/bin/zip" (list "-r" "-9" "arukanoido.zip" "arukanoido")
-                    :pty cl:*standard-output*)
-(quit)
+(fn assemble-c2nloader (&key title path-in path-out (start #x1201) (src-prefix ""))
+  (apply #'assemble-files "c2nwarp.prg"
+         `(,(+ src-prefix "zeropage.asm")
+           "bender/vic-20/basic-loader.asm"
+           ,(+ src-prefix "loader.asm")))
+  (make-vice-commands "loader.vice.txt" "break .stop")
+  (format t "Short pulse: ~A~%" *pulse-short*)
+  (format t "Long pulse: ~A~%" *pulse-long*)
+  (format t "Pulse interval: ~A~%" *pulse-interval*)
+  (format t "Pulse subinterval: ~A~%" (/ *pulse-interval* 4))
+  (format t "Pulse rate PAL: ~A~%" (integer (/ (cpu-cycles :pal) *tape-pulse*)))
+  (format t "C2NWARP rate PAL: ~A~%" (integer (* 2 (/ (cpu-cycles :pal) *tape-pulse*))))
+  (format t "Pulse rate NTSC: ~A~%" (integer (/ (cpu-cycles :ntsc) *tape-pulse*)))
+  (format t "C2NWARP rate NTSC: ~A~%" (integer (* 2 (/ (cpu-cycles :ntsc) *tape-pulse*))))
+  (with-output-file o path-out
+    (write-tap o
+      (+ (bin2cbmtap (cddr (string-list (fetch-file "c2nwarp.prg")))
+                     title
+                     :start start
+                     :short-data? t
+                     :no-gaps? t)
+         (with-input-file i path-in
+           (with-string-stream s (c2ntap s i)))))))
